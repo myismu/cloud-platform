@@ -1,0 +1,29 @@
+# =========================================================================
+# (Production) file-service.yaml 
+# =========================================================================
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      database: 0
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:sentinel:8858}
+
+# ==================== 文件系统核心参数 ====================
+file:
+  # 生产环境容器内路径，通过 Docker Compose 挂载到宿主机
+  base-dir: ${FILE_BASE_DIR:/data/upload}
+
+logging:
+  level:
+    com.exambaby.file: INFO

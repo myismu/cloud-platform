@@ -56,8 +56,8 @@
         <spring.cloud.version>2025.0.0</spring.cloud.version>
         <spring.cloud.alibaba.version>2025.0.0.0</spring.cloud.alibaba.version>
 
-        <!-- 项目版本 -->
-        <project.version>1.0.0</project.version>
+        <!-- 平台库（common/api）发布版本：本仓库与业务仓库的依赖管理都使用该属性 -->
+        <platform.libs.version>1.0.0</platform.libs.version>
 
         <!-- 第三方依赖版本 -->
         <mybatis-plus.version>3.5.10</mybatis-plus.version>
@@ -87,18 +87,18 @@
 
             <!-- ==================== 内部模块 ==================== -->
             
-            <!-- 公共模块：工具类、实体类、异常处理等 -->
+            <!-- 公共库：工具类、实体类、异常处理等（随平台发布制品，业务仓库继承此管理） -->
             <dependency>
                 <groupId>com.exambaby</groupId>
                 <artifactId>common</artifactId>
-                <version>${project.version}</version>
+                <version>${platform.libs.version}</version>
             </dependency>
-            
-            <!-- API 模块：Feign 客户端接口定义 -->
+
+            <!-- 契约库：Feign 客户端接口定义 -->
             <dependency>
                 <groupId>com.exambaby</groupId>
                 <artifactId>api</artifactId>
-                <version>${project.version}</version>
+                <version>${platform.libs.version}</version>
             </dependency>
 
             <!-- ==================== Spring Boot BOM ==================== -->
