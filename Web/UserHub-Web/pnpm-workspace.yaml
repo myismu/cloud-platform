@@ -1,0 +1,4 @@
+# pnpm 11+ 配置：显式批准依赖的构建脚本，否则 pnpm install 会以 ERR_PNPM_IGNORED_BUILDS 退出
+allowBuilds:
+  esbuild: true
+  vue-demi: true
