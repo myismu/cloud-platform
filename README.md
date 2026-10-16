@@ -1,5 +1,7 @@
 # cloud-platform（平台仓库）
 
+[![CI](https://github.com/myismu/cloud-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/myismu/cloud-platform/actions/workflows/ci.yml)
+
 AI-PPT 与 QuestionBank 两个业务系统共用的平台基础设施：用户中心、文件服务、统一网关、公共库与契约库。
 
 业务系统通过**接口调用**使用本仓库部署的服务，通过**Maven 制品**使用本仓库的库 —— 不再复制代码。

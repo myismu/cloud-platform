@@ -7,7 +7,7 @@
 
 模块结构：
 ├── common        - 公共库：工具类、统一返回、异常处理、过滤器（发布制品）
-├── api           - 契约库：用户服务的 Feign 客户端与 DTO（发布制品）
+├── api           - 契约库：各服务（用户/文件等）的 Feign 客户端与 DTO（发布制品）
 ├── gateway       - 统一网关：路由、鉴权、限流（部署件）
 └── service       - 服务模块（部署件）：
     ├── user-hub-service - 用户中心：认证、用户/角色管理
@@ -33,7 +33,7 @@
     <!-- ==================== 项目坐标 ==================== -->
     <groupId>com.exambaby</groupId>
     <artifactId>cloud</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
 
     <!-- ==================== 子模块 ==================== -->
@@ -57,7 +57,7 @@
         <spring.cloud.alibaba.version>2025.0.0.0</spring.cloud.alibaba.version>
 
         <!-- 平台库（common/api）发布版本：本仓库与业务仓库的依赖管理都使用该属性 -->
-        <platform.libs.version>1.0.0</platform.libs.version>
+        <platform.libs.version>1.0.1</platform.libs.version>
 
         <!-- 第三方依赖版本 -->
         <mybatis-plus.version>3.5.10</mybatis-plus.version>

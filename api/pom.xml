@@ -30,7 +30,7 @@
     <parent>
         <groupId>com.exambaby</groupId>
         <artifactId>cloud</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>api</artifactId>
