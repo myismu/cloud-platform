@@ -1,0 +1,105 @@
+version: '3.8'
+
+# ============================================================
+# 平台编排：中间件 + 平台服务（网关 / 用户中心 / 文件服务）
+# 业务系统（AI-PPT、QuestionBank）只依赖本编排提供的服务，
+# 自身不包含这几个服务的代码。
+# ============================================================
+
+services:
+  # ==================== 用户中心前端 ====================
+  userhub-web:
+    build:
+      context: ./Web/UserHub-Web
+      dockerfile: Dockerfile
+    container_name: userhub-web
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+    networks:
+      - platform-network
+
+  # ==================== 统一网关 ====================
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+    depends_on:
+      - nacos
+    networks:
+      - platform-network
+
+  # ==================== 用户中心 ====================
+  user-hub-service:
+    build:
+      context: ./service/user-hub-service
+      dockerfile: Dockerfile
+    container_name: user-hub-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+    networks:
+      - platform-network
+
+  # ==================== 文件服务 ====================
+  file-service:
+    build:
+      context: ./service/file-service
+      dockerfile: Dockerfile
+    container_name: file-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - FILE_BASE_DIR=/data/upload
+    volumes:
+      - ./data/upload:/data/upload # 上传与模板素材持久化到宿主机
+    depends_on:
+      - nacos
+    networks:
+      - platform-network
+
+  # ==================== 中间件（生产建议独立部署） ====================
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: nacos
+    environment:
+      - MODE=standalone
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    networks:
+      - platform-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_DATABASE=user_hub
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - platform-network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    networks:
+      - platform-network
+
+networks:
+  platform-network:
+    driver: bridge

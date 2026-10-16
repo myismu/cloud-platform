@@ -1,0 +1,56 @@
+# =========================================================================
+# file-service.yaml (建议 Data ID: file-service.yaml, Group: DEFAULT_GROUP)
+# =========================================================================
+
+spring:
+  # Redis 配置 (用于状态追踪、缓存及 Sentinel 动态规则)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: 0
+
+  # 解除文件上传大小限制
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+      
+  cloud:
+    # Sentinel 熔断限流配置
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: flow
+            data-type: json
+
+# ==================== 文件系统核心参数 ====================
+file:
+  # 统一基础目录（相对于项目根目录 user.dir）
+  # 子目录结构：img/（用户上传）、image/（AI生成图片）、templates/（PPT模板）
+  base-dir: service/file-service/upload
+
+# ==================== 日志与调试 ====================
+logging:
+  level:
+    com.exambaby.file: DEBUG
+
+# ==================== 屏蔽全局注入引发的组件报错 ====================
+seata:
+  enabled: false
+  # 兜底配置：若低版本 seata.enabled=false 仍强制校验，则为其提供默认值
+  application-id: ${spring.application.name}
+  tx-service-group: exam-bank-tx-group
+  service:
+    vgroup-mapping:
+      exam-bank-tx-group: default
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 86400000

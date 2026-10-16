@@ -1,0 +1,45 @@
+# 忽略编译后的字节码文件
+target/
+*.class
+
+# 忽略前端依赖与构建产物
+**/node_modules/
+**/dist/
+**/coverage/
+**/.eslintcache
+**/vite.config.*.timestamp*
+
+# 忽略 IDEA 的配置文件
+.idea/
+*.iml
+
+# 忽略 VS Code 本地配置，但保留项目级共享配置
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/*.code-snippets
+
+# 忽略日志文件
+*.log
+error_log.txt
+
+# 忽略本地环境覆盖文件
+*.local
+.env.local
+.env.*.local
+
+# 忽略非 pnpm 锁文件
+package-lock.json
+yarn.lock
+
+# 忽略系统临时文件
+.DS_Store
+Thumbs.db
+
+# 忽略 AI 工具产生的文件
+.claude/
+
+# 忽略文件服务的运行时产物（用户上传 img、AI 生成 image、PPT 项目 projects）
+# 例外：templates 是内置 PPT 模板库，属于产品素材，保留跟踪
+service/file-service/upload/*
+!service/file-service/upload/templates/

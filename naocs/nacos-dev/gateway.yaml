@@ -1,0 +1,160 @@
+spring:
+  cloud:
+    sentinel:
+      eager: true
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+        port: 8718
+      datasource:
+        gw-flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+            group-id: SENTINEL_GROUP
+            data-id: gateway-flow-rules
+            rule-type: gw-flow
+            data-type: json
+
+    gateway:
+      # 【核心修复】开启流式响应支持，防止流式数据被网关缓存拦截
+      streaming-media-types:
+        - text/event-stream
+        - application/stream+json
+
+      server:
+        webflux:
+          routes:
+            # ==================== 用户服务路由 ====================
+            - id: user-hub-service
+              uri: lb://user-hub-service
+              predicates:
+                - Path=/api/auth/**,/api/users/**,/api/roles/**,/api/routes/**,/api/systemInfo/**,/api/login-history/**,/api/password-history/**,/api/redis/**
+              filters:
+                - StripPrefix=1 # 去掉前缀
+
+            # ==================== 独立文件服务路由 (新增) ====================
+            - id: file-service
+              uri: lb://file-service
+              predicates:
+                - Path=/api/file/**
+              filters:
+                - StripPrefix=1
+
+            # ==================== AI 服务路由 (新增) ====================
+            - id: ai-service
+              uri: lb://ai-service
+              predicates:
+                - Path=/api/ai/**
+              filters:
+                - StripPrefix=1
+
+            # ==================== PPT 服务路由 (新增) ====================
+            - id: ppt-service
+              uri: lb://ppt-service
+              predicates:
+                - Path=/api/ppt/**
+              filters:
+                - StripPrefix=1
+                - name: AddResponseHeader
+                  args:
+                    name: X-Accel-Buffering
+                    value: "no"
+
+            # ==================== PPT 工具接口路由 (兼容前端 /tools 路径) ====================
+            - id: ppt-tools
+              uri: lb://ppt-service
+              predicates:
+                - Path=/api/tools/**
+              filters:
+                - StripPrefix=1
+                - name: AddResponseHeader
+                  args:
+                    name: X-Accel-Buffering
+                    value: "no"
+
+            # ==================== 静态资源路由 (统一走 file-service) ====================
+            # 用户上传图片：/img/**
+            - id: static-img
+              uri: lb://file-service
+              predicates:
+                - Path=/img/**
+              filters:
+                - name: AddResponseHeader
+                  args:
+                    name: Cache-Control
+                    value: "public, max-age=86400"
+
+            # AI 生成图片 / PPT 插图：/image/**
+            - id: static-image
+              uri: lb://file-service
+              predicates:
+                - Path=/image/**
+              filters:
+                - name: AddResponseHeader
+                  args:
+                    name: Cache-Control
+                    value: "public, max-age=86400"
+
+            # PPT 模板 JSON 及预览图：/templates/**
+            - id: static-templates
+              uri: lb://file-service
+              predicates:
+                - Path=/templates/**
+              filters:
+                - name: AddResponseHeader
+                  args:
+                    name: Cache-Control
+                    value: "public, max-age=86400"
+
+            # PPT 项目文件（JSON 内容、资源文件）：/projects/**
+            - id: static-projects
+              uri: lb://file-service
+              predicates:
+                - Path=/projects/**
+              filters:
+                - name: AddResponseHeader
+                  args:
+                    name: Cache-Control
+                    value: "no-cache"
+
+          # ==================== 全局跨域配置 ====================
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOriginPatterns: "*"
+                allowedMethods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowedHeaders: "*"
+                allowCredentials: true
+
+  # ==================== Redis 配置 ====================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 2000
+      lettuce:
+        pool:
+          max-active: 20
+          max-wait: 5000
+          max-idle: 10
+          min-idle: 5
+
+  # ==================== 开发工具配置 ====================
+  devtools:
+    restart:
+      enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 86400000
+
+logging:
+  level:
+    com.exambaby.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG

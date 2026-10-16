@@ -1,0 +1,110 @@
+spring:
+  cloud:
+    # ==================== Sentinel 熔断限流配置 ====================
+    sentinel:
+      eager: true
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+        port: 8719 # 用户服务 Sentinel 端口
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: flow
+            data-type: json
+        degrade:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+            group-id: SENTINEL_GROUP
+            data-id: ${spring.application.name}-degrade-rules
+            rule-type: degrade
+            data-type: json
+
+    # ==================== OpenFeign 配置 ====================
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 5000
+            readTimeout: 5000
+      circuitbreaker:
+        enabled: true
+
+    # ==================== RocketMQ 消息队列配置 ====================
+    stream:
+      rocketmq:
+        binder:
+          name-server: ${ROCKETMQ_ADDR:127.0.0.1:9876} # RocketMQ 地址
+      bindings:
+        # 用户中心：注册成功后的输出通道
+        user-out-0:
+          destination: user-register-topic
+
+  # ==================== 数据库相关配置 ====================
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/user_hub?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC
+    username: root
+    password: ${MYSQL_PWD:}
+
+  # ==================== Redis 配置 ====================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 2000
+      lettuce:
+        pool:
+          max-active: 20
+          max-wait: 5000
+          max-idle: 10
+          min-idle: 5
+
+  # ==================== 其他 Spring 配置 ====================
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  
+  devtools:
+    restart:
+      enabled: false
+
+# ==================== Seata 分布式事务配置 ====================
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: exam-bank-tx-group
+  data-source-proxy-mode: AT
+  service:
+    vgroup-mapping:
+      exam-bank-tx-group: default
+  registry:
+    type: file
+  config:
+    type: nacos
+    nacos:
+      server-addr: ${NACOS_ADDR:localhost:8848}
+      namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+      group: SEATA_GROUP
+      data-id: seata.properties
+
+# ==================== MyBatis-Plus 配置 ====================
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+# ==================== OpenFeign 兼容性配置 ====================
+feign:
+  sentinel:
+    enabled: true
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 86400000 #  24 小时
