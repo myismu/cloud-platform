@@ -33,9 +33,17 @@ AI-PPT 与 QuestionBank 两个业务系统共用的平台基础设施：用户�
 </dependency>
 ```
 
-本地开发需要在 `~/.m2/settings.xml` 声明制品仓库（包为公开，拉取无需认证）：
+本地开发需要在 `~/.m2/settings.xml` 声明制品仓库与凭据（GitHub 的 Maven 注册表**始终要求认证**；用户名填 GitHub 账号，密码填具备 `read:packages` 权限的令牌）：
 
 ```xml
+<servers>
+    <server>
+        <id>github</id>
+        <username>你的GitHub用户名</username>
+        <password>你的Token（需要 read:packages 权限）</password>
+    </server>
+</servers>
+
 <profiles>
     <profile>
         <id>github-packages</id>
