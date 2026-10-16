@@ -1,0 +1,146 @@
+version: '3.8'
+
+# ============================================================
+# 服务器部署编排（全量：中间件 + 平台 + AI-PPT + 题库）
+#
+# 与各仓库开发用的 compose 不同：本文件全部使用 GHCR 镜像，
+# 不在服务器上构建。
+#
+# 用法：
+#   1. 将本文件与 .env.example 一起放到服务器（.env.example 复制为 .env 并填真实值）
+#   2. docker compose up -d
+# 更新：docker compose pull && docker compose up -d
+# 回滚：把下面 image 的 :latest 改成要回滚的 commit 号，再 pull && up -d
+# 详细步骤见 doc/部署清单.md
+# ============================================================
+
+services:
+  # ==================== 中间件 ====================
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks: [app]
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    networks: [app]
+
+  nacos:
+    image: nacos/nacos-server:v2.3.2
+    container_name: nacos
+    environment:
+      - MODE=standalone
+    ports:
+      - "8848:8848"   # Nacos 控制台（导入配置用，生产可关闭外网访问）
+      - "9848:9848"
+    networks: [app]
+
+  # ==================== 平台服务 ====================
+  gateway:
+    image: ghcr.io/myismu/cloud-platform/gateway:latest
+    container_name: gateway
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+    depends_on: [nacos]
+    networks: [app]
+
+  user-hub-service:
+    image: ghcr.io/myismu/cloud-platform/user-hub-service:latest
+    container_name: user-hub-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on: [nacos, mysql, redis]
+    networks: [app]
+
+  file-service:
+    image: ghcr.io/myismu/cloud-platform/file-service:latest
+    container_name: file-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - FILE_BASE_DIR=/data/upload
+    volumes:
+      - ./data/upload:/data/upload   # 上传文件与 PPT 模板持久化
+    depends_on: [nacos]
+    networks: [app]
+
+  userhub-web:
+    image: ghcr.io/myismu/cloud-platform/userhub-web:latest
+    container_name: userhub-web
+    ports:
+      - "3333:80"
+    depends_on: [gateway]
+    networks: [app]
+
+  # ==================== AI-PPT 业务 ====================
+  ai-service:
+    image: ghcr.io/myismu/ai-ppt/ai-service:latest
+    container_name: ai-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - REDIS_HOST=redis
+    depends_on: [nacos, redis]
+    networks: [app]
+
+  ppt-service:
+    image: ghcr.io/myismu/ai-ppt/ppt-service:latest
+    container_name: ppt-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on: [nacos, mysql, redis]
+    networks: [app]
+
+  ai-ppt-web:
+    image: ghcr.io/myismu/ai-ppt/ai-ppt-web:latest
+    container_name: ai-ppt-web
+    ports:
+      - "3336:80"
+    depends_on: [gateway]
+    networks: [app]
+
+  # ==================== 题库业务 ====================
+  question-bank-service:
+    image: ghcr.io/myismu/question-bank/question-bank-service:latest
+    container_name: question-bank-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - NACOS_ADDR=nacos:8848
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+    depends_on: [nacos, mysql, redis]
+    networks: [app]
+
+  qb-web:
+    image: ghcr.io/myismu/question-bank/qb-web:latest
+    container_name: qb-web
+    ports:
+      - "3334:80"
+    depends_on: [gateway]
+    networks: [app]
+
+  qb-admin:
+    image: ghcr.io/myismu/question-bank/qb-admin:latest
+    container_name: qb-admin
+    ports:
+      - "3335:80"
+    depends_on: [gateway]
+    networks: [app]
+
+networks:
+  app:
+    driver: bridge

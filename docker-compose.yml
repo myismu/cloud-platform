@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     container_name: userhub-web
     ports:
-      - "80:80"
+      - "3333:80"   # 与本地开发端口一致
     depends_on:
       - gateway
     networks:
