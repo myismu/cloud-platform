@@ -1,0 +1,27 @@
+# ============================================================
+# Bootstrap 配置文件
+# 说明：此文件在 application.yml 之前加载，用于配置 Nacos 连接信息
+# 优先级：bootstrap.yml > Nacos配置中心 > application.yml
+# 
+# 多环境配置说明：
+# - dev 环境：启动参数 --spring.profiles.active=dev
+# - prod 环境：启动参数 --spring.profiles.active=prod -DNACOS_NAMESPACE=prod-uuid
+# - 本地调试：不设置，使用 public 命名空间
+# ============================================================
+
+spring:
+  application:
+    name: gateway                    # 服务名称，用于服务注册和配置中心识别
+
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+
+        # 命名空间ID（重要：填写UUID，不是显示名称）
+        # dev:  a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c
+        # prod: b2f3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d
+        namespace: ${NACOS_NAMESPACE:}
+
+        group: DEFAULT_GROUP
+        file-extension: yaml

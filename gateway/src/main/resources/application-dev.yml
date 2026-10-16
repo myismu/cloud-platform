@@ -1,0 +1,105 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+
+  config:
+    import:
+      - nacos:${spring.application.name}.yaml?refresh=true
+
+  cloud:
+    # ==================== Nacos 配置 ====================
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+        group: DEFAULT_GROUP
+
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        refresh-enabled: true
+
+#    sentinel:
+#      eager: true
+#      transport:
+#        dashboard: ${SENTINEL_DASHBOARD:localhost:8858}
+#        port: 8718
+#      datasource:
+#        gw-flow:
+#          nacos:
+#            server-addr: ${NACOS_ADDR:localhost:8848}
+#            namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+#            group-id: SENTINEL_GROUP
+#            data-id: gateway-flow-rules
+#            rule-type: gw-flow
+#            data-type: json
+#
+#    gateway:
+#      server:
+#        webflux:
+#          routes:
+#            # ==================== 用户服务路由 ====================
+#            - id: user-hub-service
+#              uri: lb://user-hub-service
+#              predicates:
+#                - Path=/api/auth/**,/api/users/**,/api/roles/**,/api/routes/**,/api/systemInfo/**,/api/login-history/**,/api/password-history/**,/api/redis/**
+#              filters:
+#                - StripPrefix=1 # 去掉前缀
+#
+#            # ==================== 静态资源路由 ====================
+#            - id: static-resources
+#              uri: lb://file-service
+#              predicates:
+#                - Path=/img/**
+#              filters:
+#                - name: AddResponseHeader
+#                  args:
+#                    name: Cache-Control
+#                    value: "public, max-age=86400"
+#
+#          # ==================== 全局跨域配置 ====================
+#          globalcors:
+#            cors-configurations:
+#              '[/**]':
+#                allowedOriginPatterns: "*"
+#                allowedMethods:
+#                  - GET
+#                  - POST
+#                  - PUT
+#                  - DELETE
+#                  - OPTIONS
+#                allowedHeaders: "*"
+#                allowCredentials: true
+#
+#  # ==================== Redis 配置 ====================
+#  data:
+#    redis:
+#      host: localhost
+#      port: 6379
+#      database: 0
+#      timeout: 2000
+#      lettuce:
+#        pool:
+#          max-active: 20
+#          max-wait: 5000
+#          max-idle: 10
+#          min-idle: 5
+#
+#  # ==================== 开发工具配置 ====================
+#  devtools:
+#    restart:
+#      enabled: true
+#
+#jwt:
+#  secret: YOUR_JWT_SECRET_HERE
+#  expiration: 86400000
+#
+#logging:
+#  level:
+#    com.exambaby.gateway: DEBUG
+#    org.springframework.cloud.gateway: DEBUG

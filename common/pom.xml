@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+============================================================
+模块名称：common（公共模块）
+模块描述：提供所有服务共享的通用功能
+
+主要功能：
+1. 通用工具类：日期、字符串、加密等工具
+2. 统一响应封装：ApiResponse 统一返回格式
+3. 全局异常处理：GlobalExceptionHandler
+4. 通用实体/DTO：UsersDTO、GlobalLog 等
+5. JWT 工具类：Token 生成与验证
+6. Redis 工具类：缓存操作封装
+7. API 文档配置：Swagger/OpenAPI 配置
+
+依赖原则：
+- 只包含真正"公共"的依赖
+- 不包含特定业务场景的依赖
+- 被 gateway、service 等所有模块依赖
+============================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ==================== 父模块 ==================== -->
+    <parent>
+        <groupId>com.exambaby</groupId>
+        <artifactId>cloud</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <packaging>jar</packaging>
+    <artifactId>common</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!--
+        ============================================================
+        Spring Boot 核心
+        ============================================================
+        -->
+        <!-- Spring Boot Web：提供 Spring MVC、Tomcat、JSON 处理等 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        安全相关
+        ============================================================
+        -->
+        <!-- Spring Security Crypto：仅使用密码加密功能，不引入完整 Security 框架 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+
+        <!--
+        ============================================================
+        JWT 认证
+        ============================================================
+        -->
+        <!-- JJWT API：JWT 接口定义 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+        </dependency>
+        <!-- JJWT 实现：运行时依赖 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- JJWT Jackson：JSON 序列化支持 -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+        ============================================================
+        JSON 处理
+        ============================================================
+        -->
+        <!-- Jackson：JSON 序列化/反序列化 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        API 文档
+        ============================================================
+        -->
+        <!-- SpringDoc：OpenAPI 3.0 文档生成，替代 Swagger -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        参数校验
+        ============================================================
+        -->
+        <!-- Jakarta Validation：Bean Validation API -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        缓存
+        ============================================================
+        -->
+        <!-- Spring Data Redis：Redis 操作封装 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        Servlet API
+        ============================================================
+        -->
+        <!-- Jakarta Servlet API：编译时依赖，运行时由容器提供 -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+        ============================================================
+        工具类
+        ============================================================
+        -->
+        <!-- Lombok：简化 Java 代码，自动生成 getter/setter/constructor 等 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
+        ============================================================
+        日志
+        ============================================================
+        -->
+        <!-- Spring Boot Log4j2：日志框架（注意：父 pom 已排除 spring-boot-starter-logging） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        数据库相关
+        ============================================================
+        -->
+        <!-- MyBatis-Plus：MyBatis 增强工具，简化 CRUD 操作 -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.10</version>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>3.5.9</version>
+        </dependency>
+
+        <!--
+        ============================================================
+        测试
+        ============================================================
+        -->
+        <!-- Spring Boot Test：JUnit 5 + AssertJ + Mockito + spring-test（版本由根 pom 的 BOM 统一管理） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>

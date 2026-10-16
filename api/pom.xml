@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+============================================================
+模块名称：api（API接口模块）
+模块描述：定义服务间远程调用的 Feign 客户端接口
+
+主要功能：
+1. Feign 客户端接口：定义服务间调用的 API 契约
+2. Fallback 降级类：服务不可用时的降级处理
+3. DTO 定义：服务间传输的数据对象
+
+设计原则：
+- 只包含接口定义，不包含实现
+- 依赖使用 provided scope，由消费者服务提供实际依赖
+- 作为"契约"被多个服务共享
+
+依赖说明：
+- common：使用通用 DTO 和响应对象
+- openfeign(provided)：Feign 客户端注解，编译时需要
+- sentinel(provided)：熔断降级支持，编译时需要
+- loadbalancer(provided)：负载均衡支持，编译时需要
+============================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ==================== 父模块 ==================== -->
+    <parent>
+        <groupId>com.exambaby</groupId>
+        <artifactId>cloud</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>api</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!--
+        ============================================================
+        内部模块
+        ============================================================
+        -->
+        <!-- common：使用通用 DTO、响应对象、工具类等 -->
+        <dependency>
+            <groupId>com.exambaby</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        Spring Boot
+        ============================================================
+        -->
+        <!-- Spring Boot Web：提供 @RequestBody、@RequestMapping 等注解 -->
+        <!--
+            scope=provided 说明：
+            - 编译时需要这些注解
+            - 运行时由消费者服务提供依赖
+            - 避免 api 模块打包时引入不必要的依赖
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+        ============================================================
+        Spring Cloud
+        ============================================================
+        -->
+        <!-- OpenFeign：声明式 HTTP 客户端 -->
+        <!--
+            @FeignClient 注解定义远程服务接口
+            示例：@FeignClient(name = "user-hub-service", fallbackFactory = xxx.class)
+        -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- LoadBalancer：客户端负载均衡 -->
+        <!--
+            支持 lb:// 协议，通过服务名调用
+            配合 Nacos 实现服务发现
+        -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+        ============================================================
+        Sentinel
+        ============================================================
+        -->
+        <!-- Sentinel：熔断降级支持 -->
+        <!--
+            FallbackFactory：创建降级处理对象
+            当远程服务不可用时，返回友好的错误提示
+        -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!--
+        ============================================================
+        工具类
+        ============================================================
+        -->
+        <!-- Lombok：简化代码 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+</project>

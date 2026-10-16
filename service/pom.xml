@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.exambaby</groupId>
+        <artifactId>cloud</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>service</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>user-hub-service</module>
+        <module>file-service</module>
+    </modules>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- ==================== 内部模块依赖 ==================== -->
+
+        <!-- 公共模块：包含通用工具类、实体类、异常处理等 -->
+        <dependency>
+            <groupId>com.exambaby</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+        <!-- ==================== Spring Boot 核心依赖 ==================== -->
+
+        <!-- Spring Boot Web：提供 Web 开发能力，包含 Spring MVC、Tomcat 等 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Test：单元测试和集成测试支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot Log4j2：日志框架，替代默认的 Logback -->
+        <!-- 注意：父 pom 已排除 spring-boot-starter-logging -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+
+        <!-- ==================== Nacos 服务发现与配置中心 ==================== -->
+
+        <!-- Nacos 服务发现：服务注册与发现，实现微服务之间的调用 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Nacos 配置中心：统一配置管理，支持动态刷新 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+        <!-- ==================== OpenFeign 服务调用 ==================== -->
+
+        <!-- OpenFeign：微服务之间的 HTTP 调用框架，支持负载均衡 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- LoadBalancer：负载均衡器，Feign 必须依赖它才能通过服务名调用 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <!-- ==================== Sentinel 熔断限流 ==================== -->
+
+        <!-- Sentinel：流量控制、熔断降级、系统负载保护 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+
+        <!-- Sentinel Nacos 数据源：将 Sentinel 规则持久化到 Nacos -->
+        <!-- 支持规则的动态更新和持久化存储 -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+        </dependency>
+
+        <!-- ==================== RocketMQ 消息队列 ==================== -->
+
+        <!-- RocketMQ Starter：分布式消息中间件，集成 Spring Cloud Stream -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+        </dependency>
+
+        <!-- ==================== Seata 分布式事务 ==================== -->
+        
+        <!-- Seata Starter：分布式事务管理 -->
+
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-seata</artifactId>
+            <version>${spring.cloud.alibaba.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.seata</groupId>
+            <artifactId>seata-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- ==================== 数据库相关 ==================== -->
+
+        <!-- MySQL 驱动：MySQL 数据库连接驱动 -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ==================== 对象映射 ==================== -->
+
+        <!-- MapStruct：Java Bean 映射框架，自动生成映射代码 -->
+        <!-- 用于 DTO、Entity、VO 之间的转换，性能优于反射方式 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+
+        <!-- MapStruct 处理器：编译时生成映射实现类 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- ==================== 开发工具 ==================== -->
+
+        <!-- DevTools：已注释掉。微服务架构中配合Seata等字节码操作中间件会引发严重的双类加载器冲突（NoClassDefFoundError） -->
+        <!-- <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency> -->
+
+        <!-- Lombok：简化代码 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+</project>

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+============================================================
+模块名称：gateway（网关模块）
+模块描述：微服务架构的统一入口，负责路由、鉴权、限流等
+
+主要功能：
+1. 路由转发：将请求转发到对应的后端服务
+2. 负载均衡：通过 Nacos 实现服务发现
+3. 统一鉴权：JWT Token 验证
+4. 熔断降级：Sentinel 网关流控
+5. 请求日志：记录所有请求信息
+6. 跨域处理：统一 CORS 配置
+
+技术特点：
+- 基于 Spring Cloud Gateway（响应式架构）
+- 使用 WebClient 进行异步非阻塞调用
+- 不使用 OpenFeign（OpenFeign 是同步阻塞的）
+
+注意事项：
+- Gateway 使用 WebFlux，不是 Servlet
+- 需要排除 common 模块中的 Servlet 相关依赖
+============================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ==================== 父模块 ==================== -->
+    <parent>
+        <groupId>com.exambaby</groupId>
+        <artifactId>cloud</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>gateway</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!--
+        ============================================================
+        内部模块
+        ============================================================
+        -->
+        <!--
+            common：公共模块
+
+            排除说明：
+            Gateway 基于 WebFlux（响应式），不是 Servlet 模式
+            需要排除 common 中的 Servlet 相关依赖：
+            - spring-boot-starter-web：Servlet 容器
+            - springdoc-openapi-starter-webmvc-ui：MVC 版本的 API 文档
+            - mybatis-plus：数据库 ORM（Gateway 不直接操作数据库）
+        -->
+        <dependency>
+            <groupId>com.exambaby</groupId>
+            <artifactId>common</artifactId>
+<!--            排除-->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.baomidou</groupId>
+                    <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!--
+        ============================================================
+        Spring Cloud Gateway
+        ============================================================
+        -->
+        <!--
+            Gateway 核心：基于 WebFlux 的响应式网关
+
+            特点：
+            - 非阻塞 I/O，高并发性能
+            - 内置路由、过滤器、限流等功能
+            - 支持 lb:// 协议的服务发现
+        -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
+        </dependency>
+
+        <!--
+            LoadBalancer：客户端负载均衡
+
+            功能：
+            - 支持 lb:// 协议路由
+            - 从 Nacos 获取服务实例列表
+            - 轮询、随机等负载均衡策略
+
+            注意：
+            Gateway 使用 lb:// 路由时必须添加此依赖
+            否则返回 503 服务不可用错误
+        -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        Nacos 服务发现与配置
+        ============================================================
+        -->
+        <!-- Nacos 服务发现：注册中心，服务自动发现 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Nacos 配置中心：统一配置管理 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        Sentinel 网关熔断
+        ============================================================
+        -->
+        <!--
+            Sentinel Gateway：网关专用熔断降级
+
+            功能：
+            - 网关流控：限制 API 访问频率
+            - 熔断降级：服务不可用时返回友好提示
+            - 热点参数限流：针对热点数据进行限流
+        -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>
+        </dependency>
+
+        <!-- Sentinel 核心 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+
+        <!-- Sentinel Nacos 数据源：从 Nacos 读取流控规则 -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        Redis
+        ============================================================
+        -->
+        <!--
+            Redis 用途：
+            - 存储 Token 黑名单
+            - 缓存用户信息
+            - 分布式 Session
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        日志
+        ============================================================
+        -->
+        <!-- Log4j2：高性能异步日志 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
+        </dependency>
+
+        <!-- Disruptor：高性能异步消息队列，用于 Log4j2 异步日志 -->
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+        </dependency>
+
+        <!--
+        ============================================================
+        开发工具
+        ============================================================
+        -->
+        <!-- DevTools：热部署，开发环境使用 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Lombok：简化代码 -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <!--
+    ============================================================
+    构建配置
+    ============================================================
+    -->
+    <build>
+        <plugins>
+            <!-- Spring Boot 打包插件：生成可执行 JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>com.exambaby.gateway.GatewayApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

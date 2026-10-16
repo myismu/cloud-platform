@@ -1,0 +1,28 @@
+server:
+  port: 8003
+
+spring:
+  application:
+    name: file-service
+  
+  config:
+    import:
+      - nacos:${spring.application.name}.yaml?refresh=true
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+        group: DEFAULT_GROUP
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:a1e2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        refresh-enabled: true
+
+# ==================== 文件系统核心参数 ====================
+file:
+  # 统一基础目录（相对于项目根目录 user.dir）
+  base-dir: service/file-service/upload
