@@ -14,6 +14,10 @@ jobs:
   publish:
     name: 发布制品到 GitHub Packages
     runs-on: ubuntu-latest
+    # mvn deploy 会从 settings.xml 中读取 ${env.GITHUB_TOKEN} 作为 Packages 密码；
+    # GITHUB_TOKEN 不是 Actions 的默认环境变量（GITHUB_ACTOR 才是），必须显式注入
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
