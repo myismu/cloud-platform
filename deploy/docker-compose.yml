@@ -106,6 +106,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
+      - REDIS_HOST=redis
       - FILE_BASE_DIR=/data/upload
     volumes:
       - ./data/upload:/data/upload   # 上传文件与 PPT 模板持久化
