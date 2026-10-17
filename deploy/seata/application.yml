@@ -1,0 +1,35 @@
+# ============================================================
+# Seata Server 容器配置（docker-compose 挂载到容器 /seata-server/conf/application.yml）
+#
+# 说明：
+# - 注册中心用 Nacos（容器名 nacos:8848）
+# - 存储用 file（事务会话存容器内，挂载到 ./data/seata/sessionStore 持久化）
+# - 服务端口 8091：各业务服务的 grouplist 在 Nacos 的 SEATA_GROUP/seata.properties 中配置
+# ============================================================
+
+server:
+  port: 7091   # 控制台/HTTP 端口
+
+spring:
+  application:
+    name: seata-server
+
+console:
+  user:
+    username: seata
+    password: seata
+
+seata:
+  config:
+    type: file
+  registry:
+    type: nacos
+    nacos:
+      application: seata-server
+      server-addr: nacos:8848
+      group: SEATA_GROUP
+      namespace: ""   # public 命名空间；如需与其他服务一致可填命名空间 ID
+  store:
+    mode: file
+  server:
+    service-port: 8091

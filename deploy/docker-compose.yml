@@ -42,6 +42,45 @@ services:
       - "9848:9848"
     networks: [app]
 
+  # ==================== 中间件：消息队列（RocketMQ：NameServer + Broker 两个容器） ====================
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.3.0
+    container_name: rocketmq-namesrv
+    command: sh mqnamesrv
+    environment:
+      - JAVA_OPT_EXT=-Xms256m -Xmx256m -Xmn128m
+    volumes:
+      - ./data/rocketmq/namesrv/logs:/home/rocketmq/logs
+    networks: [app]
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.0
+    container_name: rocketmq-broker
+    command: sh mqbroker -n rocketmq-namesrv:9876
+    environment:
+      - JAVA_OPT_EXT=-Xms512m -Xmx512m -Xmn256m
+    volumes:
+      - ./data/rocketmq/broker/logs:/home/rocketmq/logs
+      - ./data/rocketmq/broker/store:/home/rocketmq/store
+    depends_on: [rocketmq-namesrv]
+    networks: [app]
+
+  # ==================== 中间件：分布式事务（可选；当前无业务使用全局事务，可不启动） ====================
+  seata-server:
+    image: apache/seata-server:2.5.0
+    container_name: seata-server
+    environment:
+      - SEATA_PORT=8091
+      - STORE_MODE=file
+      - CONSOLE_PORT=7091
+    volumes:
+      - ./seata/application.yml:/seata-server/conf/application.yml
+      - ./data/seata/sessionStore:/seata-server/sessionStore
+    ports:
+      - "7091:7091"   # Seata 控制台（可选开放）
+    depends_on: [nacos]
+    networks: [app]
+
   # ==================== 平台服务 ====================
   gateway:
     image: ghcr.io/myismu/cloud-platform/gateway:latest
