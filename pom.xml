@@ -33,7 +33,7 @@
     <!-- ==================== 项目坐标 ==================== -->
     <groupId>com.exambaby</groupId>
     <artifactId>cloud-platform</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>pom</packaging>
 
     <!-- ==================== 子模块 ==================== -->
@@ -57,7 +57,7 @@
         <spring.cloud.alibaba.version>2025.0.0.0</spring.cloud.alibaba.version>
 
         <!-- 平台库（common/api）发布版本：本仓库与业务仓库的依赖管理都使用该属性 -->
-        <platform.libs.version>1.0.1</platform.libs.version>
+        <platform.libs.version>1.0.2</platform.libs.version>
 
         <!-- 第三方依赖版本 -->
         <mybatis-plus.version>3.5.10</mybatis-plus.version>
