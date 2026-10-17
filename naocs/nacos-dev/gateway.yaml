@@ -117,6 +117,21 @@ spring:
                     name: Cache-Control
                     value: "no-cache"
 
+            # ==================== 题库服务路由 ====================
+            - id: question-bank-service-public
+              uri: lb://question-bank-service
+              predicates:
+                - Path=/api/public/**
+              filters:
+                - StripPrefix=1
+
+            - id: question-bank-service-admin
+              uri: lb://question-bank-service
+              predicates:
+                - Path=/api/admin/**
+              filters:
+                - StripPrefix=1
+
           # ==================== 全局跨域配置 ====================
           globalcors:
             cors-configurations:
