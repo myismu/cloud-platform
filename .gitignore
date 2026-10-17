@@ -39,7 +39,14 @@ Thumbs.db
 # 忽略 AI 工具产生的文件
 .claude/
 
+# 本地演练用的覆盖配置（服务器部署不使用）
+deploy/docker-compose.override.yml
+deploy/.env
+
 # 忽略文件服务的运行时产物（用户上传 img、AI 生成 image、PPT 项目 projects）
 # 例外：templates 是内置 PPT 模板库，属于产品素材，保留跟踪
 service/file-service/upload/*
 !service/file-service/upload/templates/
+
+# 容器运行时数据（MySQL 数据文件、上传文件、消息存储等），不进版本控制
+data/
