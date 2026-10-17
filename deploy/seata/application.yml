@@ -1,5 +1,7 @@
 # ============================================================
-# Seata Server 容器配置（docker-compose 挂载到容器 /seata-server/conf/application.yml）
+# Seata Server 容器配置（docker-compose 挂载到容器 /seata-server/resources/application.yml）
+# 注意：镜像 classpath 为 resources/classes/libs，不包含 conf 目录，
+#       挂载到 conf 下不会被 Spring 读取（会导致 registry.type 回退为 file）
 #
 # 说明：
 # - 注册中心用 Nacos（容器名 nacos:8848）
@@ -13,6 +15,13 @@ server:
 spring:
   application:
     name: seata-server
+  main:
+    web-application-type: none   # Seata Server 非 Web 应用（镜像内置配置的必要项）
+
+logging:
+  config: classpath:logback-spring.xml
+  file:
+    path: ${log.home:${user.home}/logs/seata}
 
 console:
   user:

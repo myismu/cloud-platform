@@ -35,9 +35,19 @@ services:
     container_name: nacos
     environment:
       - MODE=standalone
+      # 配置持久化到外部 MySQL（nacos_config 库），避免容器重建后配置丢失
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=mysql            # 同一 compose 网络内的服务名，不是宿主机 IP
+      - MYSQL_SERVICE_PORT=3306             # 容器间通信使用容器端口，不是宿主机映射端口 13306
+      - MYSQL_SERVICE_DB_NAME=nacos_config
+      - MYSQL_SERVICE_USER=root
+      - MYSQL_SERVICE_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      # allowPublicKeyRetrieval 为 MySQL 8 默认 caching_sha2_password 认证所需
+      - "MYSQL_SERVICE_DB_PARAM=characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai"
     ports:
       - "8848:8848"   # Nacos 控制台（导入配置用，生产可关闭外网访问）
       - "9848:9848"
+    depends_on: [mysql]
     networks: [app]
 
   # ==================== 中间件：消息队列（RocketMQ：NameServer + Broker 两个容器） ====================
@@ -72,7 +82,9 @@ services:
       - STORE_MODE=file
       - CONSOLE_PORT=7091
     volumes:
-      - ./seata/application.yml:/seata-server/conf/application.yml
+      # 镜像的 classpath 为 resources/classes/libs，不包含 conf 目录；
+      # 必须覆盖 resources/application.yml，否则 seata.registry.type=nacos 不生效
+      - ./seata/application.yml:/seata-server/resources/application.yml
       - ./data/seata/sessionStore:/seata-server/sessionStore
     ports:
       - "7091:7091"   # Seata 控制台（可选开放）
@@ -86,6 +98,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
+      - REDIS_HOST=redis        # 网关鉴权需要校验 Redis 在线状态
     depends_on: [nacos]
     networks: [app]
 
@@ -128,6 +141,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
+      - MYSQL_HOST=mysql         # ai-service 同样使用 ai_db
       - REDIS_HOST=redis
     depends_on: [nacos, redis]
     networks: [app]
