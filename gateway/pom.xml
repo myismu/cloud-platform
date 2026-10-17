@@ -30,7 +30,7 @@
     <!-- ==================== 父模块 ==================== -->
     <parent>
         <groupId>com.exambaby</groupId>
-        <artifactId>cloud</artifactId>
+        <artifactId>cloud-platform</artifactId>
         <version>1.0.1</version>
     </parent>
 
