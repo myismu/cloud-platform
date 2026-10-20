@@ -10,6 +10,11 @@
 # 更新：docker compose pull && docker compose up -d
 # 回滚：把下面 image 的 :latest 改成要回滚的 commit 号，再 pull && up -d
 # 详细步骤见 doc/部署清单.md
+#
+# 部署约定：
+#   - restart: unless-stopped：宿主机/Docker 重启后自动恢复；手动 stop 的容器保持停止
+#   - healthcheck + depends_on.condition：等待依赖真正就绪，而不是只等容器进程启动
+#   - 健康检查只探测端口或就绪接口，不依赖业务接口，避免把业务故障误判为容器故障
 # ============================================================
 
 services:
@@ -23,11 +28,26 @@ services:
       - "3306:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      # mysqladmin ping 只判断 MySQL 是否可连接；$$ 转义为容器内的 $MYSQL_ROOT_PASSWORD
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks: [app]
 
   redis:
     image: redis:alpine
     container_name: redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
     networks: [app]
 
   nacos:
@@ -47,7 +67,17 @@ services:
     ports:
       - "8848:8848"   # Nacos 控制台（导入配置用，生产可关闭外网访问）
       - "9848:9848"
-    depends_on: [mysql]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # Nacos 就绪探针：MySQL 初始化完成、配置加载完成后才返回 200
+      test: ["CMD", "curl", "-fsS", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
     networks: [app]
 
   # ==================== 中间件：消息队列（RocketMQ：NameServer + Broker 两个容器） ====================
@@ -59,6 +89,13 @@ services:
       - JAVA_OPT_EXT=-Xms256m -Xmx256m -Xmn128m
     volumes:
       - ./data/rocketmq/namesrv/logs:/home/rocketmq/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9876"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
     networks: [app]
 
   rocketmq-broker:
@@ -70,7 +107,16 @@ services:
     volumes:
       - ./data/rocketmq/broker/logs:/home/rocketmq/logs
       - ./data/rocketmq/broker/store:/home/rocketmq/store
-    depends_on: [rocketmq-namesrv]
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/10911"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
     networks: [app]
 
   # ==================== 中间件：分布式事务（可选；当前无业务使用全局事务，可不启动） ====================
@@ -88,7 +134,16 @@ services:
       - ./data/seata/sessionStore:/seata-server/sessionStore
     ports:
       - "7091:7091"   # Seata 控制台（可选开放）
-    depends_on: [nacos]
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8091"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     networks: [app]
 
   # ==================== 平台服务 ====================
@@ -99,7 +154,18 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - NACOS_ADDR=nacos:8848
       - REDIS_HOST=redis        # 网关鉴权需要校验 Redis 在线状态
-    depends_on: [nacos]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8080"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
     networks: [app]
 
   user-hub-service:
@@ -110,7 +176,24 @@ services:
       - NACOS_ADDR=nacos:8848
       - MYSQL_HOST=mysql
       - REDIS_HOST=redis
-    depends_on: [nacos, mysql, redis]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seata-server:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8001"]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+      start_period: 60s
     networks: [app]
 
   file-service:
@@ -123,7 +206,18 @@ services:
       - FILE_BASE_DIR=/data/upload
     volumes:
       - ./data/upload:/data/upload   # 上传文件与 PPT 模板持久化
-    depends_on: [nacos]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8003"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
     networks: [app]
 
   userhub-web:
@@ -131,7 +225,16 @@ services:
     container_name: userhub-web
     ports:
       - "3333:80"
-    depends_on: [gateway]
+    depends_on:
+      gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     networks: [app]
 
   # ==================== AI-PPT 业务 ====================
@@ -143,7 +246,20 @@ services:
       - NACOS_ADDR=nacos:8848
       - MYSQL_HOST=mysql         # ai-service 同样使用 ai_db
       - REDIS_HOST=redis
-    depends_on: [nacos, redis]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8083"]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+      start_period: 60s
     networks: [app]
 
   ppt-service:
@@ -154,7 +270,24 @@ services:
       - NACOS_ADDR=nacos:8848
       - MYSQL_HOST=mysql
       - REDIS_HOST=redis
-    depends_on: [nacos, mysql, redis]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seata-server:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8084"]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+      start_period: 60s
     networks: [app]
 
   ai-ppt-web:
@@ -162,7 +295,18 @@ services:
     container_name: ai-ppt-web
     ports:
       - "3336:80"
-    depends_on: [gateway]
+    depends_on:
+      gateway:
+        condition: service_healthy
+      file-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     networks: [app]
 
   # ==================== 题库业务 ====================
@@ -174,7 +318,24 @@ services:
       - NACOS_ADDR=nacos:8848
       - MYSQL_HOST=mysql
       - REDIS_HOST=redis
-    depends_on: [nacos, mysql, redis]
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seata-server:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8002"]
+      interval: 10s
+      timeout: 3s
+      retries: 18
+      start_period: 60s
     networks: [app]
 
   qb-web:
@@ -182,7 +343,18 @@ services:
     container_name: qb-web
     ports:
       - "3334:80"
-    depends_on: [gateway]
+    depends_on:
+      gateway:
+        condition: service_healthy
+      file-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     networks: [app]
 
   qb-admin:
@@ -190,7 +362,18 @@ services:
     container_name: qb-admin
     ports:
       - "3335:80"
-    depends_on: [gateway]
+    depends_on:
+      gateway:
+        condition: service_healthy
+      file-service:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     networks: [app]
 
 networks:
