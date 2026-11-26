@@ -115,6 +115,9 @@ public class AuthFilter implements GlobalFilter, Ordered {
             "/api/auth/captcha",
             "/api/auth/register",
             "/api/users/getUserNameById",
+            "/api/public/questionBank/getAllPublicQuestionBanks", // 首页公开题库列表（允许未登录浏览）
+            "/api/public/questionBank/getPublicQuestionBankById", // 公开题库详情（允许未登录浏览）
+            "/api/public/questions/getQuestionsByPage",           // 公开题库题目预览（允许未登录浏览）
             "/img/",        // 静态资源：用户上传图片
             "/image/",      // 静态资源：AI 生成图片
             "/templates/",  // 静态资源：PPT 模板 JSON 及预览图
